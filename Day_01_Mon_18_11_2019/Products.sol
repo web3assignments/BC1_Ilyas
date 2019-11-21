@@ -11,8 +11,8 @@ contract ProductRepository {
     mapping (uint => Product) products;
 
     function insert(uint id, string memory name, uint price) public {
-      products[id] = Product(id, name, price);
-      storeValue += price;
+        products[id] = Product(id, name, price);
+        storeValue += price;
     }
 
   	function getStoreValue() public view returns (uint) {
@@ -21,6 +21,6 @@ contract ProductRepository {
 
   	function remove(uint id) public {
     	storeValue -= products[id].price;
-      delete products[id];
+        delete products[id];
     }
 }
