@@ -7,17 +7,17 @@ contract ProductRepository {
     /**
      * A data structure of a Product entry within the store.
      */
-  	struct Product {
-      uint id;
-      string name;
-      uint price;
+    struct Product {
+        uint id;
+        string name;
+        uint price;
     }
 
     /**
      * The current value of the store, which is the aggregation
      * of every Product's price.
      */
-  	uint storeValue;
+    uint storeValue;
 
     /**
      * The product storage.
@@ -36,16 +36,16 @@ contract ProductRepository {
     /**
      * Fetches the current store value.
      */
-  	function getStoreValue() public view returns (uint) {
-    	return storeValue;
+    function getStoreValue() public view returns (uint) {
+        return storeValue;
     }
 
     /**
      * Removes a Product entry from the ledger. This operation may reduce
      * the total value of the store.
      */
-  	function remove(uint id) public {
-    	storeValue -= products[id].price;
+    function remove(uint id) public {
+        storeValue -= products[id].price;
         delete products[id];
     }
 }
