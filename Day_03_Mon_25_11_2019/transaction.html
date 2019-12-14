@@ -1,0 +1,57 @@
+<body>
+    Latest Block Id: <p id="logBlockId"></p>
+  
+    <script>
+      /**
+       * fetchAndPresentLatestBlockId calls `fetchLatestBlockId` and
+       * forwards the result to `presentBlockId`.
+       */
+      async function fetchAndPresentLatestBlockId() {
+        latestBlock = await fetchLatestBlockId();
+        latestBlockId = parseInt(latestBlock.result);
+
+        presentBlockId(latestBlockId);        
+      }
+
+      /**
+       * presentBlockId alters an element within the document to show
+       * the given block id.
+       */
+      function presentBlockId(blockId) {
+        document.getElementById("logBlockId").innerHTML += blockId + "\n";
+      }
+  
+      /**
+       * fetchLatestBlock dispatches a request to infura.io to fetch the latest
+       * block id.
+       */
+      async function fetchLatestBlockId() {
+        const request = JSON.stringify(generateBlockIdRequest(1));
+        const response = await fetch('https://mainnet.infura.io', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: request
+        });
+  
+        return await response.json();
+      }
+  
+      /**
+       * generateBlockRequest generates a HTTP request to obtain the specified block
+       * within the Ethereum network.
+       */
+      function generateBlockIdRequest(id) {
+        return {
+          "jsonrpc": "2.0",
+          "method": "eth_blockNumber",
+          "params": [],
+          "id": id
+        }
+      }
+  
+      fetchAndPresentLatestBlockId();
+    </script>
+  </body>
