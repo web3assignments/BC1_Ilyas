@@ -3,6 +3,24 @@
   
     <script>
       /**
+       * INFURA_URL is the URL to the main network of Infura to fetch
+       * information from.
+       */
+      const INFURA_URL = 'https://mainnet.infura.io';
+
+      /**
+       * JSON_RPC_VERSION is the version of the JSON RPC implementation
+       * to use whilst sending requests.
+       */
+      const JSON_RPC_VERSION = '2.0'
+
+      /**
+       * REQ_LATEST_BLOCK_NO is the name of the RPC request to fetch the
+       * latest block number in the network.
+       */
+      const REQ_LATEST_BLOCK_NO = "eth_blockNumber"
+
+      /**
        * fetchAndPresentLatestBlockId calls `fetchLatestBlockId` and
        * forwards the result to `presentBlockId`.
        */
@@ -27,7 +45,7 @@
        */
       async function fetchLatestBlockId() {
         const request = JSON.stringify(generateBlockIdRequest(1));
-        const response = await fetch('https://mainnet.infura.io', {
+        const response = await fetch(INFURA_URL, {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
@@ -45,8 +63,8 @@
        */
       function generateBlockIdRequest(id) {
         return {
-          "jsonrpc": "2.0",
-          "method": "eth_blockNumber",
+          "jsonrpc": JSON_RPC_VERSION,
+          "method": REQ_LATEST_BLOCK_NO,
           "params": [],
           "id": id
         }
