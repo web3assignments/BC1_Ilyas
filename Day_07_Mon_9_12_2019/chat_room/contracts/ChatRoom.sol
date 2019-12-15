@@ -56,7 +56,7 @@ contract ChatRoom {
     mapping (string => Participant) private participantsByNames;
     Participant[] private participants;
     Message[] private history;
-    State private state;
+    State private state = State.OPEN;
 
     /**
      * Registers a new 'Participant' to this chat room.
@@ -93,6 +93,13 @@ contract ChatRoom {
     }
 
     /**
+     * Returns whether this chat room is open for participants or not.
+     */
+    function isOpen() public view returns(bool isOpened) {
+        return state == State.OPEN;
+    }
+
+    /**
      * Broadcasts the given text message as being sent by the specified user.
      */
     function broadcast(string memory displayName, string memory text) public {
@@ -116,6 +123,14 @@ contract ChatRoom {
 
         // and notify all contracts of a participant having left the chat room
         emit ParticipantLeft(displayName);
+    }
+
+    /**
+     * Returns whether a user by the specified display name exists
+     * within this chat room.
+     */
+    function isRegistered(string memory displayName) public view returns(bool exists) {
+        return participantsByNames[displayName].index != 0;
     }
 
     /**
