@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <script src="https://unpkg.com/ipfs-http-client/dist/index.js"></script>
+        <script src="https://bundle.run/buffer"></script>
+    </head>
+<body>
+    <h1>Add content to IPFS via Infura</h1>
+    <script type="text/javascript">
+        const TEXT_VALUE = "Wow \r\n";
+
+        const INFURA_IPFS_URL = 'https://ipfs.infura.io:5001';
+
+        function log(value) {
+            document.getElementById("log").innerHTML += value + "\n";
+        }
+
+        async function insertStringValue(value) {
+            const Buffer = window.buffer.Buffer;
+            const ipfs = window.IpfsHttpClient(INFURA_IPFS_URL);
+            const bufDataToHash = Buffer.from(value);
+
+            log(`Adding ${value} to IPFS via Infura`);
+            const hash = await ipfs.add(bufDataToHash).catch(console.log);
+
+            log(`Hash ${hash[0].hash}`);
+        }
+
+        insertStringValue(TEXT_VALUE);
+    </script>
+</body>
+</html>
