@@ -1,75 +1,126 @@
 <body>
-    Latest Block Id: <p id="logBlockId"></p>
-  
-    <script>
-      /**
-       * INFURA_URL is the URL to the main network of Infura to fetch
-       * information from.
-       */
-      const INFURA_URL = 'https://mainnet.infura.io';
+  Latest Block Id: <p id="logBlockId"></p>
+  Transaction: <p id="transaction"></p>
 
-      /**
-       * JSON_RPC_VERSION is the version of the JSON RPC implementation
-       * to use whilst sending requests.
-       */
-      const JSON_RPC_VERSION = '2.0'
+  <script>
+    /**
+     * INFURA_URL is the URL to the main network of Infura to fetch
+     * information from.
+     */
+    const INFURA_URL = 'https://mainnet.infura.io';
 
-      /**
-       * REQ_LATEST_BLOCK_NO is the name of the RPC request to fetch the
-       * latest block number in the network.
-       */
-      const REQ_LATEST_BLOCK_NO = "eth_blockNumber"
+    /**
+     * INFURA_WS_URL is the URL to establish a websocket connection with.
+     */
+    const INFURA_WS_URL = "wss://mainnet.infura.io/ws";
 
-      /**
-       * fetchAndPresentLatestBlockId calls `fetchLatestBlockId` and
-       * forwards the result to `presentBlockId`.
-       */
-      async function fetchAndPresentLatestBlockId() {
-        latestBlock = await fetchLatestBlockId();
-        latestBlockId = parseInt(latestBlock.result);
+    /**
+     * JSON_RPC_VERSION is the version of the JSON RPC implementation
+     * to use whilst sending requests.
+     */
+    const JSON_RPC_VERSION = '2.0';
 
-        presentBlockId(latestBlockId);        
+    /**
+     * REQ_LATEST_BLOCK_NO is the name of the RPC request to fetch the
+     * latest block number in the network.
+     */
+    const REQ_LATEST_BLOCK_NO = "eth_blockNumber";
+
+    /**
+     * fetchAndPresentLatestBlockId calls `fetchLatestBlockId` and
+     * forwards the result to `presentBlockId`.
+     */
+    async function fetchAndPresentLatestBlockId() {
+      latestBlock = await fetchLatestBlockId();
+      latestBlockId = parseInt(latestBlock.result);
+
+      presentBlockId(latestBlockId);
+    }
+
+    /**
+     * fetchAndPresentTransaction opens up a WebSocket connection
+     * to show transaction information.
+     */
+    async function fetchAndPresentTransaction() {
+      var socket = new WebSocket(INFURA_WS_URL);
+      socket.onopen = function (event) {
+        const request = JSON.stringify({ "id": 1, "method": "eth_subscribe", "params": ["newHeads"] });
+        presentTransaction(`Connection opened, sending: ${request}`);
+        socket.send(request);
+      };
+
+      socket.onmessage = async function (event) {
+        presentTransaction(`Received ${event.data}`);
+        var data = JSON.parse(event.data);
+        presentTransaction(`Current blocknumber = ${parseInt(data.params.result.number)}`);
       }
 
-      /**
-       * presentBlockId alters an element within the document to show
-       * the given block id.
-       */
-      function presentBlockId(blockId) {
-        document.getElementById("logBlockId").innerHTML += blockId + "\n";
+      socket.onerror = function (error) {
+        presentTransaction(`[error] ${error.message}`);
+      };
+    }
+
+    /**
+     * presentBlockId alters an element within the document to show
+     * the given block id.
+     */
+    function presentBlockId(blockId) {
+      document.getElementById("logBlockId").innerHTML += blockId + "\n";
+    }
+
+    /**
+     * presentTransaction alters an element within the document to show
+     * the given transaction.
+     */
+    function presentTransaction(transaction) {
+      document.getElementById("transaction").innerHTML += transaction + "\n";
+    }
+
+    /**
+     * fetchLatestBlockId dispatches a request to infura.io to fetch the latest
+     * block id.
+     */
+    async function fetchLatestBlockId() {
+      const request = JSON.stringify(generateBlockIdRequest(1));
+      const response = await fetch(INFURA_URL, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: request
+      });
+
+      return await response.json();
+    }
+
+    /**
+     * generateBlockIdRequest generates a HTTP request to obtain the specified block
+     * within the Ethereum network.
+     */
+    function generateBlockIdRequest(id) {
+      return {
+        "jsonrpc": JSON_RPC_VERSION,
+        "method": REQ_LATEST_BLOCK_NO,
+        "params": [],
+        "id": id
       }
-  
-      /**
-       * fetchLatestBlockId dispatches a request to infura.io to fetch the latest
-       * block id.
-       */
-      async function fetchLatestBlockId() {
-        const request = JSON.stringify(generateBlockIdRequest(1));
-        const response = await fetch(INFURA_URL, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: request
-        });
-  
-        return await response.json();
+    }
+
+    /**
+     * generateTransactionRequest generates a HTTP request to obtain the specified
+     * transaction within the Ethereum network.
+     */
+    function generateTransactionRequest(id) {
+      return {
+        "jsonrpc": JSON_RPC_VERSION,
+        "method": REQ_TRANSACTION,
+        "params": [],
+        "id": id
       }
-  
-      /**
-       * generateBlockIdRequest generates a HTTP request to obtain the specified block
-       * within the Ethereum network.
-       */
-      function generateBlockIdRequest(id) {
-        return {
-          "jsonrpc": JSON_RPC_VERSION,
-          "method": REQ_LATEST_BLOCK_NO,
-          "params": [],
-          "id": id
-        }
-      }
-  
-      fetchAndPresentLatestBlockId();
-    </script>
-  </body>
+    }
+
+    fetchAndPresentLatestBlockId();
+    fetchAndPresentTransaction();
+  </script>
+</body>
