@@ -1,10 +1,12 @@
 pragma solidity >=0.4.0 <0.7.0;
 
+import "github.com/provable-things/ethereum-api/provableAPI.sol";
+
 /**
  * A smart contract that simulates a chat room where
  * participants can chat with each other.
  */
-contract ChatRoom {
+contract ChatRoom is usingProvable {
     /**
      * Defines an event of a participant having joined the chat room.
      */
@@ -57,6 +59,7 @@ contract ChatRoom {
     Participant[] private participants;
     Message[] private history;
     State private state = State.OPEN;
+    uint256 public priceOfUrl;
 
     /**
      * Registers a new 'Participant' to this chat room.
@@ -139,4 +142,14 @@ contract ChatRoom {
     function getParticipantCount() public view returns(uint count) {
         return participants.length;
     }
+
+    function __callback(bytes32 _queryId, string memory _result, bytes memory _proof) public {
+        require(msg.sender == provable_cbAddress(), "wrong address");
+    }
+
+    function GetTemp() public payable {
+       priceOfUrl = provable_getPrice("URL");
+       require (address(this).balance >= priceOfUrl,"please add some ETH to cover for the query fee");
+       provable_query("URL", "json(http://weerlive.nl/api/json-data-10min.php?key=demo&locatie=Amsterdam).liveweer[0].temp");
+   }
 }
