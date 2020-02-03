@@ -107,7 +107,7 @@ contract ChatRoom {
     }
 
     /// @notice Returns whether this chat room is open for participants or not.
-    /// @return Whether the chat room is open or not.
+    /// @return isOpened Whether the chat room is open or not.
     function isOpen() public view returns(bool isOpened) {
         return state == State.OPEN;
     }
@@ -123,7 +123,7 @@ contract ChatRoom {
 
     /// @notice Returns whether a user by the specified display name exists within
     /// this chat room.
-    /// @return Whether the specified user exists in this chat room.
+    /// @return exists Whether the specified user exists in this chat room.
     function isRegistered(string memory displayName) public view returns(bool exists) {
         return !participantsByNames[displayName].exists;
     }
@@ -159,8 +159,7 @@ contract Channel {
         return exists;
     }
 
-    /// @notice Marks this Channel as not existing anymore and then destroys
-    /// it.
+    /// @notice Marks this Channel as not existing anymore and then destroys it.
     function destroy() public {
         exists = false;
         selfdestruct(owner);
