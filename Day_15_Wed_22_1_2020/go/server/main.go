@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"math/big"
+	"reflect"
 	"strings"
 	"time"
 
@@ -25,9 +26,38 @@ const (
 	contractAddress   = "0x3F58c3d19aE978d2984e927e995129D2a2854a47"
 )
 
-type Event struct {
+var (
+	participantJoinedSigHash = crypto.Keccak256Hash([]byte("ParticipantJoined(string)"))
+	participantLeftSigHash   = crypto.Keccak256Hash([]byte("ParticipantLeft(string)"))
+
+	channelCreatedSigHash   = crypto.Keccak256Hash([]byte("ChannelCreated(string)"))
+	channelDestroyedSigHash = crypto.Keccak256Hash([]byte("ChannelDestroyed(string)"))
+
+	chatRoomOpenedSigHash = crypto.Keccak256Hash([]byte("ChatRoomOpened()"))
+	chatRoomClosedSigHash = crypto.Keccak256Hash([]byte("ChatRoomClosed"))
+)
+
+type ParticipantJoinedEvent struct {
 	DisplayName string
 }
+
+type ParticipantLeftEvent struct {
+	DisplayName string
+}
+
+type ChannelCreated struct {
+	Name string
+}
+
+type ChannelDestroyed struct {
+	Name string
+}
+
+type ChatRoomOpened struct{}
+
+type ChatRoomClosed struct{}
+
+type Event interface{}
 
 func main() {
 	ctx := context.Background()
@@ -45,24 +75,44 @@ func main() {
 	go func() {
 		time.Sleep(5 * time.Second)
 
-		log.Println("Shooting in a transaction!")
 		transactOpts, err := createTransactOpts(ctx, client, accountPrivateKey)
 		if err != nil {
 			panic(err)
 		}
 
-		tx, err := cr.Register(transactOpts, "Sino")
+		_, err = cr.Register(transactOpts, "Sino")
 		if err != nil {
 			panic(err)
 		}
 
-		log.Printf("Success with hash: %v\n", tx.Hash().String())
+		transactOpts, err = createTransactOpts(ctx, client, accountPrivateKey)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = cr.Register(transactOpts, "Sino1")
+		if err != nil {
+			panic(err)
+		}
+
+		transactOpts, err = createTransactOpts(ctx, client, accountPrivateKey)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = cr.Register(transactOpts, "Sino2")
+		if err != nil {
+			panic(err)
+		}
 	}()
 
 	contractAbi, err := abi.JSON(strings.NewReader(chatRoom.ChatRoomABI))
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	eventChannel := make(chan Event)
+	go handleEvents(eventChannel)
 
 	for {
 		log.Println("Waiting for an event...")
@@ -72,18 +122,81 @@ func main() {
 			continue
 		}
 
-		log.Printf("New event received with block number %v\n", eventLog.BlockNumber)
-		log.Printf("TX hash: %v\n", eventLog.TxHash.String())
-		log.Printf("Block address: %v\n", eventLog.Address.String())
+		eventTopic := eventLog.Topics[0]
+		topicHex := eventTopic.Hex()
+		switch topicHex {
+		case participantJoinedSigHash.Hex():
+			event := &ParticipantJoinedEvent{}
+			err = contractAbi.Unpack(event, "ParticipantJoined", eventLog.Data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
 
-		event := &Event{}
-		err = contractAbi.Unpack(event, "ParticipantJoined", eventLog.Data)
-		if err != nil {
-			log.Println(err)
-			continue
+			eventChannel <- event
+
+		case participantLeftSigHash.Hex():
+			event := &ParticipantLeftEvent{}
+			err = contractAbi.Unpack(event, "ParticipantLeft", eventLog.Data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			eventChannel <- event
+
+		case channelCreatedSigHash.Hex():
+			event := &ChannelCreated{}
+			err = contractAbi.Unpack(event, "ChannelCreated", eventLog.Data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			eventChannel <- event
+
+		case channelDestroyedSigHash.Hex():
+			event := &ChannelDestroyed{}
+			err = contractAbi.Unpack(event, "ChannelDestroyed", eventLog.Data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			eventChannel <- event
+
+		case chatRoomOpenedSigHash.Hex():
+			event := &ChatRoomOpened{}
+			err = contractAbi.Unpack(event, "ChatRoomOpened", eventLog.Data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			eventChannel <- event
+
+		case chatRoomClosedSigHash.Hex():
+			event := &ChatRoomClosed{}
+			err = contractAbi.Unpack(event, "ChatRoomClosed", eventLog.Data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			eventChannel <- event
+
+		default:
+			log.Printf("unsupported event type of %v with hex %v\n", eventTopic, topicHex)
 		}
+	}
+}
 
-		log.Println(event)
+func handleEvents(eventChannel <-chan Event) {
+	for evt := range eventChannel {
+		switch evt {
+		default:
+			log.Printf("unsupported event of type %v\n", reflect.TypeOf(evt))
+		}
 	}
 }
 
@@ -140,8 +253,8 @@ func makeNewChatRoom(client *ethclient.Client, address common.Address) (*chatRoo
 func consumeEventLog(ctx context.Context, client *ethclient.Client, address common.Address) (*types.Log, error) {
 	query := ethereum.FilterQuery{
 		Addresses: []common.Address{address},
-		FromBlock: big.NewInt(10),
-		ToBlock:   big.NewInt(40),
+		FromBlock: big.NewInt(0),
+		ToBlock:   big.NewInt(100000),
 	}
 
 	logs := make(chan types.Log)
