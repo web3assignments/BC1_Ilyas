@@ -3,5 +3,5 @@
 To compile this to a Go ABI:
 
 ```
-abigen --sol contracts/ChatRoom.sol --pkg main --out ../abi/chatroom.go
+abigen --sol contracts/ChatRoom.sol --pkg main --out ../go/abi/chatroom.go
 ```
