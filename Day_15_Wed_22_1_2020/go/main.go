@@ -20,7 +20,7 @@ func main() {
         log.Fatal(err)
     }
 
-	privateKey, err := crypto.HexToECDSA("fad9c8855b740a0b7ed4c221dbad0f33a83a49cad6b3fe8d5817ac83d38b6a19")
+	privateKey, err := crypto.HexToECDSA("aedf2b2bbc210ec0755d66026b0fea64d2c572d1f8db962f0fba26fb07777c93")
     if err != nil {
         log.Fatal(err)
     }
@@ -44,8 +44,8 @@ func main() {
 
     auth := bind.NewKeyedTransactor(privateKey)
     auth.Nonce = big.NewInt(int64(nonce))
-    auth.Value = big.NewInt(0)     // in wei
-    auth.GasLimit = uint64(300000) // in units
+    auth.Value = big.NewInt(0)
+    auth.GasLimit = uint64(0)
     auth.GasPrice = gasPrice
 
     address, tx, instance, err := chatRoom.DeployChatRoom(auth, client)
