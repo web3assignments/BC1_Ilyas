@@ -1,4 +1,6 @@
-# Chat Room App
+# Chat Room - Server Application
+
+The server application of the chat room DApp.
 
 ## Setup
 
@@ -6,4 +8,10 @@ To be able to run this program, you'll first have to generate the associated ABI
 
 ```
 ./build.sh
+```
+
+## Running it
+
+```
+go run main.go
 ```
