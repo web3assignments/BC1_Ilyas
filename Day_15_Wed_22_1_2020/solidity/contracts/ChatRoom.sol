@@ -135,7 +135,6 @@ contract ChatRoom {
 
 /// @title A channel of messages.
 /// @author I.A Baas
-/// @notice You can use this contract for only the most basic chatting.
 contract Channel {
     bool public exists;
 
