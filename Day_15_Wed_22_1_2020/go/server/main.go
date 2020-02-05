@@ -23,18 +23,23 @@ import (
 
 const (
 	accountPrivateKey = "aedf2b2bbc210ec0755d66026b0fea64d2c572d1f8db962f0fba26fb07777c93"
-	contractAddress   = "0x3F58c3d19aE978d2984e927e995129D2a2854a47"
 )
 
 var (
+	contractAddress = common.HexToAddress("0xe94506240068647aF19D9Db6b4f025513B4066cc")
+
 	participantJoinedSigHash = crypto.Keccak256Hash([]byte("ParticipantJoined(string)"))
 	participantLeftSigHash   = crypto.Keccak256Hash([]byte("ParticipantLeft(string)"))
 
 	channelCreatedSigHash   = crypto.Keccak256Hash([]byte("ChannelCreated(string)"))
 	channelDestroyedSigHash = crypto.Keccak256Hash([]byte("ChannelDestroyed(string)"))
 
+	// NOTE: as we're creating a hash for every op, it is rather symbol
+	// sensitive, including spaces!
+	messageBroadcastedSigHash = crypto.Keccak256Hash([]byte("MessageBroadcasted(string,string,string)"))
+
 	chatRoomOpenedSigHash = crypto.Keccak256Hash([]byte("ChatRoomOpened()"))
-	chatRoomClosedSigHash = crypto.Keccak256Hash([]byte("ChatRoomClosed"))
+	chatRoomClosedSigHash = crypto.Keccak256Hash([]byte("ChatRoomClosed()"))
 )
 
 type ParticipantJoinedEvent struct {
@@ -43,6 +48,12 @@ type ParticipantJoinedEvent struct {
 
 type ParticipantLeftEvent struct {
 	DisplayName string
+}
+
+type MessageBroadcasted struct {
+	ChannelName string
+	DisplayName string
+	Text        string
 }
 
 type ChannelCreated struct {
@@ -66,8 +77,7 @@ func main() {
 		panic(err)
 	}
 
-	hexContractAddress := common.HexToAddress(contractAddress)
-	cr, err := makeNewChatRoom(client, hexContractAddress)
+	cr, err := makeNewChatRoom(client, contractAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -104,6 +114,16 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+
+		transactOpts, err = createTransactOpts(ctx, client, accountPrivateKey)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = cr.Send(transactOpts, "General", "Sino", "Hello World!")
+		if err != nil {
+			panic(err)
+		}
 	}()
 
 	contractAbi, err := abi.JSON(strings.NewReader(chatRoom.ChatRoomABI))
@@ -116,7 +136,7 @@ func main() {
 
 	for {
 		log.Println("Waiting for an event...")
-		eventLog, err := consumeEventLog(ctx, client, hexContractAddress)
+		eventLog, err := consumeEventLog(ctx, client, contractAddress)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -138,6 +158,16 @@ func main() {
 		case participantLeftSigHash.Hex():
 			event := &ParticipantLeftEvent{}
 			err = contractAbi.Unpack(event, "ParticipantLeft", eventLog.Data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			eventChannel <- event
+
+		case messageBroadcastedSigHash.Hex():
+			event := &MessageBroadcasted{}
+			err = contractAbi.Unpack(event, "MessageBroadcasted", eventLog.Data)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -192,10 +222,10 @@ func main() {
 }
 
 func handleEvents(eventChannel <-chan Event) {
-	for evt := range eventChannel {
-		switch evt {
+	for event := range eventChannel {
+		switch evt := event.(type) {
 		default:
-			log.Printf("unsupported event of type %v\n", reflect.TypeOf(evt))
+			log.Printf("unsupported event of type %v, data: [%v]\n", reflect.TypeOf(evt), evt)
 		}
 	}
 }
@@ -209,8 +239,8 @@ func connectToChain(ctx context.Context, url string) (*ethclient.Client, error) 
 	return client, nil
 }
 
-func createTransactOpts(ctx context.Context, client *ethclient.Client, privateKeyStr string) (*bind.TransactOpts, error) {
-	privateKey, err := crypto.HexToECDSA(privateKeyStr)
+func createTransactOpts(ctx context.Context, client *ethclient.Client, keyStr string) (*bind.TransactOpts, error) {
+	privateKey, err := crypto.HexToECDSA(keyStr)
 	if err != nil {
 		return nil, err
 	}
