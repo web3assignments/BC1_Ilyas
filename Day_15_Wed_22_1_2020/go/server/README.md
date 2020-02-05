@@ -10,6 +10,12 @@ To be able to run this program, you'll first have to generate the associated ABI
 ./build.sh
 ```
 
+And to get all dependencies ready:
+
+```
+go mod download
+```
+
 ## Running it
 
 ```
