@@ -16,6 +16,10 @@ contract ChatRoom {
     /// @notice Defines an event of a channel having been destroyed.
     event ChannelDestroyed(string name);
 
+    /// @notice Defines a message broadcast event that subscribers may listen
+    /// to, to trigger an action in a separate contract.
+    event MessageBroadcasted(string channelName, string displayName, string text);
+
     /// @notice Defines an event of the chat room having been opened again.
     event ChatRoomOpened();
 
@@ -74,14 +78,14 @@ contract ChatRoom {
 
     /// @notice Sends the given text message of the specified participant, into
     /// the specified chat channel.
-    /// @param name The name of the channel to send the message to.
+    /// @param channelName The name of the channel to send the message to.
     /// @param displayName The name of the participant to display to
     /// other users.
     /// @param text The text message to send into the channel.
-    function send(string calldata name, string calldata displayName, string calldata text) external {
-        Channel c = channels[name];
+    function send(string calldata channelName, string calldata displayName, string calldata text) external {
+        Channel c = channels[channelName];
         if (c.doesExist()) {
-            c.broadcast(displayName, text);
+            emit MessageBroadcasted(channelName, displayName, text);
         }
     }
 
@@ -133,10 +137,6 @@ contract ChatRoom {
 /// @author I.A Baas
 /// @notice You can use this contract for only the most basic chatting.
 contract Channel {
-    /// @notice Defines a message broadcast event that subscribers may listen
-    /// to, to trigger an action in a separate contract.
-    event MessageBroadcasted(string displayName, string text);
-
     bool public exists;
 
     address payable owner;
@@ -144,13 +144,6 @@ contract Channel {
     constructor() public {
         exists = true;
         owner = msg.sender;
-    }
-
-    /// @notice Broadcasts the given text message as being sent by the specified user.
-    /// @param displayName The name of the participant sending the message.
-    /// @param text The text to broadcast.
-    function broadcast(string memory displayName, string memory text) public {
-        emit MessageBroadcasted(displayName, text);
     }
 
     /// @notice Returns whether this channel actually exists.
