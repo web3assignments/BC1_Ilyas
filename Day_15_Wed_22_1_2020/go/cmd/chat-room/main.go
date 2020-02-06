@@ -51,8 +51,12 @@ func main() {
 	}()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/join", chat.JoinEndpoint(chatRoom))
-	r.HandleFunc("/send", chat.SendEndpoint(chatRoom))
+
+	r.HandleFunc("/join", chat.JoinEndpoint(chatRoom)).
+		Methods("POST")
+
+	r.HandleFunc("/send", chat.SendEndpoint(chatRoom)).
+		Methods("POST")
 
 	if err := http.ListenAndServe(":8079", r); err != nil {
 		log.Fatal(err)
