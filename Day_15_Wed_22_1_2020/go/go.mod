@@ -10,6 +10,7 @@ require (
 	github.com/elastic/gosigar v0.10.5 // indirect
 	github.com/ethereum/go-ethereum v1.9.10
 	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72 // indirect
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
