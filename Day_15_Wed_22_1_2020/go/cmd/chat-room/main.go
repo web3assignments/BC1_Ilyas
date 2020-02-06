@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"log"
-	"time"
+	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gorilla/mux"
 
 	"github.com/web3assignments/BC1_Ilyas/internal/chat-room/chat"
 )
@@ -39,22 +40,21 @@ func main() {
 
 	go func() {
 		for {
-			time.Sleep(1 * time.Second)
-
-			err := chatClient.Send(ctx, "General", "Sino", "Hello World!")
+			event, err := chatClient.Consume(ctx)
 			if err != nil {
 				log.Println(err)
+				continue
 			}
+
+			log.Println(event)
 		}
 	}()
 
-	for {
-		event, err := chatClient.Consume(ctx)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
+	r := mux.NewRouter()
+	r.HandleFunc("/join", chat.JoinEndpoint(chatRoom))
+	r.HandleFunc("/send", chat.SendEndpoint(chatRoom))
 
-		log.Println(event)
+	if err := http.ListenAndServe(":8079", r); err != nil {
+		log.Fatal(err)
 	}
 }
