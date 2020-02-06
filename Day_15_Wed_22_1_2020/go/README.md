@@ -19,5 +19,5 @@ go mod download
 ## Running it
 
 ```
-go run main.go
+go run cmd/chat-room/main.go
 ```
